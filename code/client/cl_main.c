@@ -163,17 +163,6 @@ void CL_ShowIP_f(void);
 void CL_ServerStatus_f(void);
 void CL_ServerStatusResponse( netadr_t from, msg_t *msg );
 
-/*
-===============
-CL_CDDialog
-
-Called by Com_Error when a cd is needed
-===============
-*/
-void CL_CDDialog( void ) {
-	cls.cddialog = qtrue;	// start it next frame
-}
-
 #ifdef USE_MUMBLE
 static
 void CL_UpdateMumble(void)
@@ -1337,22 +1326,11 @@ void CL_ClearState (void) {
 ====================
 CL_UpdateGUID
 
-update cl_guid using QKEY_FILE and optional prefix
 ====================
 */
 static void CL_UpdateGUID( const char *prefix, int prefix_len )
 {
-	fileHandle_t f;
-	int len;
-
-	len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
-	FS_FCloseFile( f );
-
-	if( len != QKEY_SIZE ) 
-		Cvar_Set( "cl_guid", "" );
-	else
-		Cvar_Set( "cl_guid", Com_MD5File( QKEY_FILE, QKEY_SIZE,
-			prefix, prefix_len ) );
+    Cvar_Set( "cl_guid", "DISABLED-GUID" );
 }
 
 static void CL_OldGame(void)
@@ -1549,89 +1527,6 @@ void CL_RequestMotd( void ) {
 #endif
 }
 
-/*
-===================
-CL_RequestAuthorization
-
-Authorization server protocol
------------------------------
-
-All commands are text in Q3 out of band packets (leading 0xff 0xff 0xff 0xff).
-
-Whenever the client tries to get a challenge from the server it wants to
-connect to, it also blindly fires off a packet to the authorize server:
-
-getKeyAuthorize <challenge> <cdkey>
-
-cdkey may be "demo"
-
-
-#OLD The authorize server returns a:
-#OLD 
-#OLD keyAthorize <challenge> <accept | deny>
-#OLD 
-#OLD A client will be accepted if the cdkey is valid and it has not been used by any other IP
-#OLD address in the last 15 minutes.
-
-
-The server sends a:
-
-getIpAuthorize <challenge> <ip>
-
-The authorize server returns a:
-
-ipAuthorize <challenge> <accept | deny | demo | unknown >
-
-A client will be accepted if a valid cdkey was sent by that ip (only) in the last 15 minutes.
-If no response is received from the authorize server after two tries, the client will be let
-in anyway.
-===================
-*/
-#ifndef STANDALONE
-void CL_RequestAuthorization( void ) {
-	char	nums[64];
-	int		i, j, l;
-	cvar_t	*fs;
-
-	if ( !cls.authorizeServer.port ) {
-		Com_Printf( "Resolving %s\n", AUTHORIZE_SERVER_NAME );
-		if ( !NET_StringToAdr( AUTHORIZE_SERVER_NAME, &cls.authorizeServer, NA_IP ) ) {
-			Com_Printf( "Couldn't resolve address\n" );
-			return;
-		}
-
-		cls.authorizeServer.port = BigShort( PORT_AUTHORIZE );
-		Com_Printf( "%s resolved to %i.%i.%i.%i:%i\n", AUTHORIZE_SERVER_NAME,
-			cls.authorizeServer.ip[0], cls.authorizeServer.ip[1],
-			cls.authorizeServer.ip[2], cls.authorizeServer.ip[3],
-			BigShort( cls.authorizeServer.port ) );
-	}
-	if ( cls.authorizeServer.type == NA_BAD ) {
-		return;
-	}
-
-	// only grab the alphanumeric values from the cdkey, to avoid any dashes or spaces
-	j = 0;
-	l = strlen( cl_cdkey );
-	if ( l > 32 ) {
-		l = 32;
-	}
-	for ( i = 0 ; i < l ; i++ ) {
-		if ( ( cl_cdkey[i] >= '0' && cl_cdkey[i] <= '9' )
-				|| ( cl_cdkey[i] >= 'a' && cl_cdkey[i] <= 'z' )
-				|| ( cl_cdkey[i] >= 'A' && cl_cdkey[i] <= 'Z' )
-			 ) {
-			nums[j] = cl_cdkey[i];
-			j++;
-		}
-	}
-	nums[j] = 0;
-
-	fs = Cvar_Get ("cl_anonymous", "0", CVAR_INIT|CVAR_SYSTEMINFO );
-
-	NET_OutOfBandPrint(NS_CLIENT, cls.authorizeServer, "getKeyAuthorize %i %s", fs->integer, nums );
-}
-#endif
 /*
 ======================================================================
 
@@ -2360,10 +2255,7 @@ void CL_CheckForResend( void ) {
 	switch ( clc.state ) {
 	case CA_CONNECTING:
 		// requesting a challenge .. IPv6 users always get in as authorize server supports no ipv6.
-#ifndef STANDALONE
-		if (!com_standalone->integer && clc.serverAddress.type == NA_IP && !Sys_IsLANAddress( clc.serverAddress ) )
-			CL_RequestAuthorization();
-#endif
+
 
 		// The challenge request shall be followed by a client challenge so no malicious server can hijack this connection.
 		// Add the gamename so the server knows we're running the correct game or can reject the client
@@ -2953,17 +2845,6 @@ void CL_Frame ( int msec ) {
 	}
 #endif
 
-	if ( cls.cddialog ) {
-		// bring up the cd error dialog if needed
-		cls.cddialog = qfalse;
-		VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_NEED_CD );
-	} else	if ( clc.state == CA_DISCONNECTED && !( Key_GetCatcher( ) & KEYCATCH_UI )
-		&& !com_sv_running->integer && uivm ) {
-		// if disconnected, bring up the menu
-		S_StopAllSounds();
-		VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_MAIN );
-	}
-
 	// if recording an avi, lock to a fixed fps
 	if ( CL_VideoRecording( ) && cl_aviFrameRate->integer && msec) {
 		// save the current screen
@@ -3398,97 +3279,6 @@ void CL_StopVideo_f( void )
 }
 
 /*
-===============
-CL_GenerateQKey
-
-test to see if a valid QKEY_FILE exists.  If one does not, try to generate
-it by filling it with 2048 bytes of random data.
-===============
-*/
-static void CL_GenerateQKey(void)
-{
-	int len = 0;
-	unsigned char buff[ QKEY_SIZE ];
-	fileHandle_t f;
-
-	len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
-	FS_FCloseFile( f );
-	if( len == QKEY_SIZE ) {
-		Com_Printf( "QKEY found.\n" );
-		return;
-	}
-	else {
-		if( len > 0 ) {
-			Com_Printf( "QKEY file size != %d, regenerating\n",
-				QKEY_SIZE );
-		}
-
-		Com_Printf( "QKEY building random string\n" );
-		Com_RandomBytes( buff, sizeof(buff) );
-
-		f = FS_SV_FOpenFileWrite( QKEY_FILE );
-		if( !f ) {
-			Com_Printf( "QKEY could not open %s for write\n",
-				QKEY_FILE );
-			return;
-		}
-		FS_Write( buff, sizeof(buff), f );
-		FS_FCloseFile( f );
-		Com_Printf( "QKEY generated\n" );
-	}
-} 
-
-void CL_Sayto_f( void ) {
-	char		*rawname;
-	char		name[MAX_NAME_LENGTH];
-	char		cleanName[MAX_NAME_LENGTH];
-	const char	*info;
-	int			count;
-	int			i;
-	int			clientNum;
-	char		*p;
-
-	if ( Cmd_Argc() < 3 ) {
-		Com_Printf ("sayto <player name> <text>\n");
-		return;
-	}
-
-	rawname = Cmd_Argv(1);
-
-	Com_FieldStringToPlayerName( name, MAX_NAME_LENGTH, rawname );
-
-	info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_SERVERINFO];
-	count = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
-
-	clientNum = -1;
-	for( i = 0; i < count; i++ ) {
-
-		info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_PLAYERS+i];
-		Q_strncpyz( cleanName, Info_ValueForKey( info, "n" ), sizeof(cleanName) );
-		Q_CleanStr( cleanName );
-
-		if ( !Q_stricmp( cleanName, name ) ) {
-			clientNum = i;
-			break;
-		}
-	}
-	if( clientNum <= -1 )
-	{
-		Com_Printf ("No such player name: %s.\n", name);
-		return;
-	}
-
-	p = Cmd_ArgsFrom(2);
-
-	if ( *p == '"' ) {
-		p++;
-		p[strlen(p)-1] = 0;
-	}
-
-	CL_AddReliableCommand(va("tell %i \"%s\"", clientNum, p ), qfalse);
-}
-
-/*
 ====================
 CL_Init
 ====================
@@ -3690,10 +3480,7 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("model", CL_SetModel_f );
 	Cmd_AddCommand ("video", CL_Video_f );
 	Cmd_AddCommand ("stopvideo", CL_StopVideo_f );
-	if( !com_dedicated->integer ) {
-		Cmd_AddCommand ("sayto", CL_Sayto_f );
-		Cmd_SetCommandCompletionFunc( "sayto", CL_CompletePlayerName );
-	}
+
 	CL_InitRef();
 
 	SCR_Init ();
@@ -3702,8 +3489,7 @@ void CL_Init( void ) {
 
 	Cvar_Set( "cl_running", "1" );
 
-	CL_GenerateQKey();
-	Cvar_Get( "cl_guid", "", CVAR_USERINFO | CVAR_ROM );
+	Cvar_Get( "cl_guid", "DISABLED-GUID", CVAR_USERINFO );
 	CL_UpdateGUID( NULL, 0 );
 
 	Com_Printf( "----- Client Initialization Complete -----\n" );
@@ -4641,70 +4427,3 @@ void CL_ShowIP_f(void) {
 	Sys_ShowIP();
 }
 
-/*
-=================
-CL_CDKeyValidate
-=================
-*/
-qboolean CL_CDKeyValidate( const char *key, const char *checksum ) {
-#ifdef STANDALONE
-	return qtrue;
-#else
-	char	ch;
-	byte	sum;
-	char	chs[3];
-	int i, len;
-
-	len = strlen(key);
-	if( len != CDKEY_LEN ) {
-		return qfalse;
-	}
-
-	if( checksum && strlen( checksum ) != CDCHKSUM_LEN ) {
-		return qfalse;
-	}
-
-	sum = 0;
-	// for loop gets rid of conditional assignment warning
-	for (i = 0; i < len; i++) {
-		ch = *key++;
-		if (ch>='a' && ch<='z') {
-			ch -= 32;
-		}
-		switch( ch ) {
-		case '2':
-		case '3':
-		case '7':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'G':
-		case 'H':
-		case 'J':
-		case 'L':
-		case 'P':
-		case 'R':
-		case 'S':
-		case 'T':
-		case 'W':
-			sum += ch;
-			continue;
-		default:
-			return qfalse;
-		}
-	}
-
-	sprintf(chs, "%02x", sum);
-	
-	if (checksum && !Q_stricmp(chs, checksum)) {
-		return qtrue;
-	}
-
-	if (!checksum) {
-		return qtrue;
-	}
-
-	return qfalse;
-#endif
-}

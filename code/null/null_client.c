@@ -77,9 +77,6 @@ void CL_JoystickEvent( int axis, int value, int time ) {
 void CL_InitKeyCommands( void ) {
 }
 
-void CL_CDDialog( void ) {
-}
-
 void CL_FlushMemory(void)
 {
 }
@@ -98,5 +95,3 @@ void CL_InitRef(void)
 void CL_Snd_Shutdown(void)
 {
 }
-
-qboolean CL_CDKeyValidate( const char *key, const char *checksum ) { return qtrue; }

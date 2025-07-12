@@ -776,10 +776,6 @@ MISC
 ==============================================================
 */
 
-// centralizing the declarations for cl_cdkey
-// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=470
-extern char cl_cdkey[34];
-
 // returned by Sys_GetProcessorFeatures
 typedef enum
 {
@@ -1012,9 +1008,6 @@ void	CL_ForwardCommandToServer( const char *string );
 // things like godmode, noclip, etc, are commands directed to the server,
 // so when they are typed in at the console, they will need to be forwarded.
 
-void CL_CDDialog( void );
-// bring up the "need a cd to play" dialog
-
 void CL_FlushMemory( void );
 // dump all memory on an error
 
@@ -1059,7 +1052,6 @@ int SV_SendQueuedPackets(void);
 // UI interface
 //
 qboolean UI_GameCommand( void );
-qboolean UI_usesUniqueCDKey(void);
 
 //
 // input interface

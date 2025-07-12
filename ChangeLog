@@ -435,8 +435,6 @@
 	+ removed sv_allowanonymous, was dummy and polluting the serverinfo
 		(sv_allowanonymous was designed to flag wether server was public or not, but that's replaced by g_needpass)
 	+ https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=514
-		sv_strictAuth (default 1): server variable to control wether strict CDKEY auth should be performed
-			this is required if you want reliable cl_guid on the server
 		extended the getIpAuthorize (server->auth message) syntax
 		sending the fs_game at all times (default 'baseq3'), dummy sv_allowAnonymous 0, strict auth flag
 		NOTE: 1.31 server on baseq3 sends a getIpAuthorize packet like:
@@ -548,8 +546,6 @@
   + https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=491
 	  adding a sv_lanForceRate (defaults to 1) to turn on/off server forcing rate of LAN clients
 		(only affects LAN dedicated clients - dedicated 1, default behaviour forces LAN clients to 99999 rate)
-	+ https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=470
-	  fixing potential overflows with cl_cdkey (propagated from RTCW)
 	+ cons-based build system (imported from Wolf, was partly written for mod tools release already)
 	  building with SMP on by default
 	+ better #ifdef SMP handling ('disabled at compile time' message)	
@@ -1320,7 +1316,6 @@
 2001-01-18  Bernd Kreimeier  <bk@lokigames.com>
 
 	* code/ui/ui_main.c: below.
-	* code/q3_ui/ui_main.c: UI_HASUNIQUECDKEY comment.
 	Note: mods have to return qfalse. See Bug #2890 in Fenris.
 
 2001-01-17  Bernd Kreimeier  <bk@lokigames.com>
@@ -1791,10 +1786,8 @@
 	TODO: sound code is awful
 	TODO: video playback inferior to earlier builds
 
-	* code/q3_ui/ui_local.h: prototype trap_VerifyCDKey(..)
 	* code/game/g_active.c ( StuckInOtherClient): TA only.
 	* code/cgame/cg_draw.c: 4x unbalanced `#endif' - from patch?
-	* code/null/null_client.c (CL_CDKeyValidate): dummy added.
 	* code/qcommon/common.c: Q_acos missing, changed conditionals
 	
 	* code/qcommon/vm_x86.c: unreacheable _asm instruction that
@@ -2615,7 +2608,6 @@
 	  ui_shared.c
 	  ui_util.c
 	Replaced by the /ui/*.menu files:
-	 q3lcc: can't find `../ui_cdkey.c'
 	 q3lcc: can't find `../ui_ingame.c'
 	etc.
 
@@ -2798,10 +2790,6 @@
 
 	* code-sos/qcommon/common.c: conditional DEDICATED to get rid off 
 	CL_ShutdownCGame/CL_ShutdownUI/CIN_CloseAllVideos.
-	Same for UI_usesUniqueCDKey: dedicated server does not
-	write CD key file.
-	TODO: check whether there is an unneeded "read CD key"
-	for dedicated server.
 
 	* code-sos/null/null_client.c (CL_ShutdownAll): added dummy.
 

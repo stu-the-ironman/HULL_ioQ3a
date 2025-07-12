@@ -37,9 +37,6 @@ endif
 ifndef BUILD_BASEGAME
   BUILD_BASEGAME =
 endif
-ifndef BUILD_MISSIONPACK
-  BUILD_MISSIONPACK=
-endif
 ifndef BUILD_RENDERER_OPENGL1
   BUILD_RENDERER_OPENGL1=
 endif
@@ -1185,12 +1182,6 @@ ifneq ($(BUILD_GAME_SO),0)
       $(B)/$(BASEGAME)/qagame$(SHLIBNAME) \
       $(B)/$(BASEGAME)/ui$(SHLIBNAME)
   endif
-  ifneq ($(BUILD_MISSIONPACK),0)
-    TARGETS += \
-      $(B)/$(MISSIONPACK)/cgame$(SHLIBNAME) \
-      $(B)/$(MISSIONPACK)/qagame$(SHLIBNAME) \
-      $(B)/$(MISSIONPACK)/ui$(SHLIBNAME)
-  endif
 endif
 
 ifneq ($(BUILD_GAME_QVM),0)
@@ -1199,12 +1190,6 @@ ifneq ($(BUILD_GAME_QVM),0)
       $(B)/$(BASEGAME)/vm/cgame.qvm \
       $(B)/$(BASEGAME)/vm/qagame.qvm \
       $(B)/$(BASEGAME)/vm/ui.qvm
-  endif
-  ifneq ($(BUILD_MISSIONPACK),0)
-    TARGETS += \
-      $(B)/$(MISSIONPACK)/vm/cgame.qvm \
-      $(B)/$(MISSIONPACK)/vm/qagame.qvm \
-      $(B)/$(MISSIONPACK)/vm/ui.qvm
   endif
 endif
 
@@ -2793,7 +2778,6 @@ Q3UIOBJ_ = \
   $(B)/$(BASEGAME)/ui/bg_lib.o \
   $(B)/$(BASEGAME)/ui/ui_addbots.o \
   $(B)/$(BASEGAME)/ui/ui_atoms.o \
-  $(B)/$(BASEGAME)/ui/ui_cdkey.o \
   $(B)/$(BASEGAME)/ui/ui_cinematics.o \
   $(B)/$(BASEGAME)/ui/ui_confirm.o \
   $(B)/$(BASEGAME)/ui/ui_connect.o \
@@ -3117,9 +3101,6 @@ ifneq ($(BUILD_GAME_SO),0)
   ifneq ($(BUILD_BASEGAME),0)
 	-$(MKDIR) -m 0755 $(COPYDIR)/$(BASEGAME)
   endif
-  ifneq ($(BUILD_MISSIONPACK),0)
-	-$(MKDIR) -m 0755 $(COPYDIR)/$(MISSIONPACK)
-  endif
 endif
 
 ifneq ($(BUILD_CLIENT),0)
@@ -3155,14 +3136,6 @@ ifneq ($(BUILD_GAME_SO),0)
 					$(COPYDIR)/$(BASEGAME)/.
 	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(BASEGAME)/ui$(SHLIBNAME) \
 					$(COPYDIR)/$(BASEGAME)/.
-  endif
-  ifneq ($(BUILD_MISSIONPACK),0)
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(MISSIONPACK)/cgame$(SHLIBNAME) \
-					$(COPYDIR)/$(MISSIONPACK)/.
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(MISSIONPACK)/qagame$(SHLIBNAME) \
-					$(COPYDIR)/$(MISSIONPACK)/.
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(MISSIONPACK)/ui$(SHLIBNAME) \
-					$(COPYDIR)/$(MISSIONPACK)/.
   endif
 endif
 

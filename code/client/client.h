@@ -38,10 +38,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <opus.h>
 #endif
 
-// file full of random crap that gets used to create cl_guid
-#define QKEY_FILE "qkey"
-#define QKEY_SIZE 2048
-
 #define	RETRANSMIT_TIMEOUT	3000	// time between connection packet retransmits
 
 // snapshots are a view of the server at a given time
@@ -308,8 +304,6 @@ typedef struct {
 } serverInfo_t;
 
 typedef struct {
-	qboolean	cddialog;			// bring up the cd needed dialog next frame
-
 	// when the server clears the hunk, all of these must be restarted
 	qboolean	rendererStarted;
 	qboolean	soundStarted;
@@ -482,7 +476,6 @@ int CL_GetPingQueueCount( void );
 
 void CL_ShutdownRef( void );
 void CL_InitRef( void );
-qboolean CL_CDKeyValidate( const char *key, const char *checksum );
 int CL_ServerStatus( char *serverAddress, char *serverStatusString, int maxLen );
 
 qboolean CL_CheckPaused(void);

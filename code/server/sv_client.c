@@ -256,7 +256,6 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 	}
 	if ( !Q_stricmp( s, "unknown" ) ) {
 		if (!r) {
-			NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\nAwaiting CD key authorization\n" );
 		} else {
 			NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\n%s\n", r);
 		}
@@ -267,7 +266,6 @@ void SV_AuthorizeIpPacket( netadr_t from ) {
 
 	// authorization failed
 	if (!r) {
-		NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\nSomeone is using this CD Key\n" );
 	} else {
 		NET_OutOfBandPrint( NS_SERVER, challengeptr->adr, "print\n%s\n", r );
 	}
